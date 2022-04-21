@@ -3,106 +3,120 @@ import { AgGridReact } from "ag-grid-react";
 import'ag-grid-community/dist/styles/ag-grid.css'
 import'ag-grid-community/dist/styles/ag-theme-material.css';
 import Button from '@mui/material/Button';
+import Snackbar from '@mui/material/Snackbar';
 import Addcar from "./Addcar";
 import Editcar from "./Editcar";
 
-export default function Carlist() {
+export default function Carlist () {
+
     const [cars, setCars] = useState([]);
+    const [open, setOpen] = React.useState(false);
+    const [msg, setMsg] = useState('');
+
 
     useEffect(() => fetchData(), []);
 
-    const fetchData = () => {
-        fetch('https://carstockrest.herokuapp.com/cars')
+        const fetchData = () => {
+      fetch("https://carrestapi.herokuapp.com/cars")
         .then(response => response.json())
         .then(data => setCars(data._embedded.cars))
     }
 
     const deleteCar = (link) => {
-        if (window.confirm('Are you sure?')) {
-        fetch(link, {method: 'DELETE'})
-        .then(res => fetchData())
-        .catch(err => console.error(err))
+      fetch(link , { method: 'DELETE' })
+      .then(response => {
+        if (response.ok) {
+          fetchData();
+          setOpen(true);
+        } else {
+          alert('Something went wrong')
         }
+      })
+
     }
 
-    const saveCar = (car) => {
-        fetch('https://carstockrest.herokuapp.com/cars', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(car)
-        })
-        .then(res => fetchData())
-        .catch(err => console.error(err))
+
+    const addCar = (car) => {
+      fetch(process.env.REACT_APP_API_URL,{
+        method: 'POST',
+        headers: {'Content-type':'application/json'},
+        body: JSON.stringify(car)
+      })
+      .then(response => {
+        if (response.ok) {
+          fetchData();
+        }
+        else {
+          alert('Adding car failed');
+        }
+      })
+      .catch(err => console.error(err))
+    }
+  
+    const updateCar = (updatedCar, link) => {
+      fetch(link, {
+        method: 'PUT',
+        headers: {'Content-type':'application/json'},
+        body: JSON.stringify(updatedCar)
+      })
+      .then(response => {
+        if (response.ok) {
+          setMsg('Car edited succesfully');
+          setOpen(true);
+          fetchData();
+        }
+        else {
+          alert('Something went wrong!');
+        }
+      })
+      .catch(err => console.error(err))
     }
 
     const columns = [
+        { field: 'brand', sortable: true, filter: true},
+        { field: 'model', sortable: true, filter: true},
+        { field: 'color', sortable: true, filter: true},
+        { field: 'fuel', sortable: true, filter: true, width: 120},
+        { field: 'year', sortable: true, filter: true, width: 120},
+        { field: 'price', sortable: true, filter: true, width: 120},
         {
-        headerName: 'Brand',
-        field: 'brand',
-        filter: true,
-        sortable: true,
-        floatingFilter : true
+          
+          headerName: '',
+          width: 100,
+          field: '_links.self.href',
+          cellRenderer: params =>
+         <Editcar updateCar={updateCar} params={params} />
+          
         },
-        {
-        headerName: 'Model',
-        field: 'model',
-        filter: true,
-        sortable: true,
-        floatingFilter : true
-        },
-        {
-        headerName: 'Color',
-        field: 'color',
-        filter: true,
-        sortable: true,
-        floatingFilter : true
-        },
-        {
-         headerName: 'Fuel',
-         field: 'fuel',
-         filter: true,
-        sortable: true,
-        floatingFilter : true
-         },
-         {
-         headerName: 'Year',
-         field: 'year',
-         filter: true,
-        sortable: true,
-        floatingFilter : true
-         },
-         {
-         headerName: 'Price',
-         field: 'price',
-         filter: true,
-        sortable: true,
-        floatingFilter : true
-         },
-         {
-         headerName: 'Edit',
-         width: 100,
-         sortable: false,
-         cellRenderer: row => <Editcar car={row.original} />
-         },
-         {
-        width: 100,
-        headerName: 'Delete',
-        field: '_links.self.href',
-         cellRenderer:({value})=><div>
-         <Button variant="contained" size="small" color="error" onClick={()=>deleteCar(value)}>Delete</Button>
-       </div>
-         }
+        { 
+          headerName: '',
+          width: 100,
+          field: '_links.self.href',
+          cellRenderer: params => 
+          <Button variant="contained" size="small" color="error" onClick={() => deleteCar(params.value)}>Delete</Button>
+          
+        }
+        
     ]
+ 
 
     return (
-        <div className="ag-theme-material.css"
-        style={{height: '700px', width: '80%', margin: 'auto'}} >
-            <Addcar saveCar={saveCar} />
-            <AgGridReact  rowData={cars} columnDefs={columns}>
-                </AgGridReact>
+        <>
+         <div className="ag-theme-material.css" style={{height: 600, width: '100%'}}>
+         <Addcar addCar={addCar} />
+            <AgGridReact rowData={cars} columnDefs={columns}>
+            </AgGridReact>
 
+        
         </div>
-    )
+        <Snackbar
+          open={open}
+          message={msg}
+          autoHideDuration={3000}
+          onClose={() => setOpen(false)}
+        />
+
+
+        </>
+    );
 }
