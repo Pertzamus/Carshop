@@ -7,52 +7,47 @@ import Snackbar from '@mui/material/Snackbar';
 import Addcar from "./Addcar";
 import Editcar from "./Editcar";
 
-export default function Carlist () {
-
+export default function Carlist() {
     const [cars, setCars] = useState([]);
     const [open, setOpen] = React.useState(false);
     const [msg, setMsg] = useState('');
-
+    
 
     useEffect(() => fetchData(), []);
 
-        const fetchData = () => {
-      fetch("https://carrestapi.herokuapp.com/cars")
+    const fetchData = () => {
+        fetch('https://carstockrest.herokuapp.com/cars')
         .then(response => response.json())
         .then(data => setCars(data._embedded.cars))
     }
 
     const deleteCar = (link) => {
-      fetch(link , { method: 'DELETE' })
-      .then(response => {
-        if (response.ok) {
-          fetchData();
-          setOpen(true);
-        } else {
-          alert('Something went wrong')
+        if (window.confirm('Are you sure?')) {
+        fetch(link, {method: 'DELETE'})
+        .then(res => fetchData())
+        .catch(err => console.error(err))
         }
-      })
-
     }
 
+    const saveCar = (car) => {
+        fetch('https://carstockrest.herokuapp.com/cars', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(car)
+          })
+          .then(response => {
+            if (response.ok) {
+              fetchData();
+            }
+            else {
+              alert('Adding car failed, check that your inputted "Year" and "Price" are only numbers');
+            }
+          })
+          .catch(err => console.error(err))
+        }
 
-    const addCar = (car) => {
-      fetch(process.env.REACT_APP_API_URL,{
-        method: 'POST',
-        headers: {'Content-type':'application/json'},
-        body: JSON.stringify(car)
-      })
-      .then(response => {
-        if (response.ok) {
-          fetchData();
-        }
-        else {
-          alert('Adding car failed');
-        }
-      })
-      .catch(err => console.error(err))
-    }
-  
     const updateCar = (updatedCar, link) => {
       fetch(link, {
         method: 'PUT',
@@ -66,48 +61,78 @@ export default function Carlist () {
           fetchData();
         }
         else {
-          alert('Something went wrong!');
+          alert('Editing a car failed, check that your inputted "Year" and "Price" are only numbers');
         }
       })
       .catch(err => console.error(err))
     }
 
     const columns = [
-        { field: 'brand', sortable: true, filter: true},
-        { field: 'model', sortable: true, filter: true},
-        { field: 'color', sortable: true, filter: true},
-        { field: 'fuel', sortable: true, filter: true, width: 120},
-        { field: 'year', sortable: true, filter: true, width: 120},
-        { field: 'price', sortable: true, filter: true, width: 120},
-        {
-          
+      {
+      field: 'brand',
+      sortable: true,
+      filter: true,
+      floatingFilter : true
+      },
+      {
+      field: 'model', 
+      sortable: true, 
+      filter: true, 
+      floatingFilter : true
+      },
+      {
+      field: 'color', 
+      sortable: true, 
+      filter: true, 
+      floatingFilter : true
+      },
+      {
+      field: 'fuel', 
+      sortable: true,  
+      filter: true, 
+      floatingFilter : true, 
+      width: 120
+      },
+      {
+      field: 'year', 
+      sortable: true,  
+      filter: true, 
+      floatingFilter : true, 
+      width: 120
+      },
+      {
+      field: 'price', 
+      sortable: true,  
+      filter: true, 
+      floatingFilter : true, 
+      width: 120
+      },
+      
+         {
           headerName: '',
           width: 100,
           field: '_links.self.href',
           cellRenderer: params =>
          <Editcar updateCar={updateCar} params={params} />
-          
-        },
-        { 
-          headerName: '',
+         },
+         {
           width: 100,
+          headerName: "",
           field: '_links.self.href',
-          cellRenderer: params => 
-          <Button variant="contained" size="small" color="error" onClick={() => deleteCar(params.value)}>Delete</Button>
-          
-        }
-        
+          cellRenderer:({value})=><div>
+            <Button variant="contained" size="small" color="error"
+            onClick={()=>deleteCar(value)}>Delete</Button>
+       </div>
+         }
     ]
- 
 
     return (
-        <>
-         <div className="ag-theme-material.css" style={{height: 600, width: '100%'}}>
-         <Addcar addCar={addCar} />
-            <AgGridReact rowData={cars} columnDefs={columns}>
-            </AgGridReact>
-
-        
+      <>
+        <div className="ag-theme-material.css"
+        style={{height: '700px', width: '80%', margin: 'auto'}} >
+            <Addcar saveCar={saveCar} />
+                <AgGridReact  rowData={cars} columnDefs={columns}>
+                </AgGridReact>
         </div>
         <Snackbar
           open={open}
@@ -115,8 +140,6 @@ export default function Carlist () {
           autoHideDuration={3000}
           onClose={() => setOpen(false)}
         />
-
-
         </>
-    );
+    )
 }

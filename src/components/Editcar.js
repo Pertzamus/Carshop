@@ -38,7 +38,7 @@ export default function Editcar({ updateCar, params }) {
 
   return (
     <div>
-      <Button onClick={handleClickOpen}>
+      <Button variant="contained" onClick={handleClickOpen}>
           Edit
       </Button>
       <Dialog open={open} onClose={handleClose}>
@@ -107,4 +107,3 @@ export default function Editcar({ updateCar, params }) {
     </div>
   );
 }
-
